@@ -20,28 +20,12 @@ class StyleFlipperControl {
     for (const [styleClass, styleData] of Object.entries(this.styles)) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `map-style ${styleClass}`;
-      button.title = `Switch to ${styleClass}`;
-
-      // Add an image to the button
-      const img = document.createElement("img");
-      img.src = styleData.image;
-      img.alt = styleClass;
-      img.style.width = "100%";
-      button.appendChild(img);
+      button.className = `btnflipper ${styleClass}`;
+      button.innerText = styleData.name
 
       // Add a click event listener
       button.addEventListener("click", () => {
-        this.saveCustomSourcesAndLayers();
-        this.map.setStyle(styleData.url);
-        this.currentStyleCode = styleData.code;
-        this.highlightActiveStyle(styleClass);
-        this.map.once("styledata", () => {
-          this.restoreCustomSourcesAndLayers();
-        });
-        if (this.onStyleChange) {
-          this.onStyleChange(styleClass, styleData.code);
-        }
+        this.changeStyle(styleClass);
       });
 
       this.container.appendChild(button);
@@ -106,12 +90,11 @@ class StyleFlipperControl {
 
     const allImageIDs = this.map.listImages();
     const customIDs = allImageIDs.filter(id => id.startsWith('customImg-'));
-    if(customIDs.length != 0 ) {
+    if(customIDs.length !== 0 ) {
         customIDs.forEach((Id)=>{
-            this.customSourcesAndLayers.image[Id] = this.map.getImage(Id)
-        })
-    };
-  
+            this.customSourcesAndLayers.image[Id] = this.map.getImage(Id);
+        });
+    }
   }
 
   restoreCustomSourcesAndLayers() {
@@ -121,13 +104,35 @@ class StyleFlipperControl {
       this.map.addSource(sourceId, source);
     }
     for (const layer of this.customSourcesAndLayers.layers) {
-        this.map.addLayer(layer);
+      this.map.addLayer(layer);
     }
 
     for (const [IdImage, Image] of Object.entries(
       this.customSourcesAndLayers.image
     )) {
-        this.map.addImage(IdImage, Image.data);
+      this.map.addImage(IdImage, Image.data);
+    }
+  }
+
+  // เมธอดใหม่สำหรับเปลี่ยนสไตล์จากภายนอก
+  changeStyle(styleClass) {
+    const styleData = this.styles[styleClass];
+    if (!styleData) {
+      console.warn(`Style "${styleClass}" not found.`);
+      return;
+    }
+
+    this.saveCustomSourcesAndLayers();
+    this.map.setStyle(styleData.url);
+    this.currentStyleCode = styleData.code;
+    this.highlightActiveStyle(styleClass);
+
+    this.map.once("styledata", () => {
+      this.restoreCustomSourcesAndLayers();
+    });
+
+    if (this.onStyleChange) {
+      this.onStyleChange(styleClass, styleData.code);
     }
   }
 }
@@ -135,41 +140,35 @@ class StyleFlipperControl {
 // Add CSS for the control
 const style = document.createElement("style");
 style.textContent = `
-    .style-flipper-control {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 2px;
-      padding: 4px;
-      background: white;
-      border-radius: 2px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    }
-  
-    .style-flipper-control .map-style {
-      width: 36px;
-      height: 36px;
-      background: transparent;
-      cursor: pointer;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  
-    .style-flipper-control .map-style:hover {
-      background: rgba(0, 0, 0, 0.1);
-    }
-  
-    .style-flipper-control .map-style.active {
-      border: 3px solid rgb(209, 62, 86);
-    }
-  
-    .style-flipper-control .map-style img {
-      width: 100%;
-      height: 100%;
-    }
-  `;
+  .style-flipper-control {
+    display: flex;
+    align-items: center;
+    width: 100% !important;
+    padding: 0px;
+    border-radius: 0px;
+  }
+
+  .style-flipper-control .btnflipper {
+    height: 20px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    width: 100%;
+    font-size: 12px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0px;
+  }
+
+  .style-flipper-control .btnflipper.active {
+   background-color: black;
+   color: white;
+  }
+
+`;
 document.head.appendChild(style);
 
 export default StyleFlipperControl;
